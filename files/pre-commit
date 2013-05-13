@@ -24,7 +24,7 @@ function getRoot() {
 
 function runJshint(cwd, config, myconfig) {
     var cmd;
-    var jshintCommand = './node_modules/precommit-hook/node_modules/.bin/jshint .';
+    var jshintCommand = './node_modules/precommit-hook/node_modules/.bin/jshint';
     var jshint;
 
     if (myconfig && myconfig.hasOwnProperty('lint')) {
@@ -36,12 +36,12 @@ function runJshint(cwd, config, myconfig) {
     }
 
     if(os.platform() === 'win32'){
-        jshintCommand = './node_modules/precommit-hook/node_modules/.bin/jshint.cmd .';
+        jshintCommand += '.cmd';
     }
     if (!cmd) cmd = jshintCommand;
     cmd = path.normalize(cmd);
 
-    jshint = spawn(cmd, [], {
+    jshint = spawn(cmd, ['.'], {
             cwd: cwd,
             stdio: 'inherit'
         });
