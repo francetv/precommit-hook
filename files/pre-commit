@@ -8,13 +8,14 @@ var exec = require('child_process').exec,
     notfound = '\x1B[33mn/a\x1B[39m (no script found)';
 
 function getRoot() {
+    var path = require('path');
     exec('git rev-parse --show-toplevel', function (err, stdout, stderr) {
         if (err) {
             console.log('failed to find git root');
             process.exit(1);
         }
 
-        var cwd = stdout.trim(),
+        var cwd = path.normalize(stdout.trim()),
             config = require(path.join(cwd, 'package.json')),
             myconfig = config.config && config.config.precommit ? config.config.precommit : undefined;
 
@@ -86,7 +87,9 @@ function runValidator(path, config, myconfig) {
     }
 }
 
-function runTests(path, config, myconfig) {
+function runTests(cwd, config, myconfig) {
+    var path = require('path');
+    var fs = require('fs');
     var cmd;
     if (myconfig && myconfig.hasOwnProperty('test')) {
         if (myconfig.test && myconfig.test !== true) {
@@ -97,15 +100,27 @@ function runTests(path, config, myconfig) {
     }
     if (!cmd && config.scripts && config.scripts.test) cmd = config.scripts.test;
     if (cmd) {
-        exec(cmd, { cwd: path }, function (err, stdout, stderr) {
-            if (err) {
-                console.log('tests: ' + fail);
-                console.log(stdout);
-                console.log(stderr);
-                process.exit(1);
-            } else {
+        var toSpawn = cmd.split(' ')[0];
+        var spawnArgs = cmd.split(' ').slice(1);
+        if(os.platform() === 'win32') {
+            toSpawn = toSpawn + '.cmd';
+            if (fs.existsSync(path.join(cwd, 'node_modules/.bin', toSpawn))) {
+                toSpawn = path.normalize('./node_modules/.bin/' + toSpawn);
+            }
+        }
+
+        var tests = spawn(toSpawn, spawnArgs, {
+            cwd: cwd,
+            stdio: 'inherit'
+        });
+
+        tests.on('close', function(code) {
+            if(code === 0) {
                 console.log('tests: ' + ok);
-                process.exit(0);
+            }
+            else {
+                console.log('tests: ' + fail);
+                process.exit(1);
             }
         });
     } else {
