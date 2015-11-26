@@ -100,20 +100,7 @@ function runTests(cwd, config, myconfig) {
     }
     if (!cmd && config.scripts && config.scripts.test) cmd = config.scripts.test;
     if (cmd) {
-        var toSpawn = cmd.split(' ')[0];
-        var spawnArgs = cmd.split(' ').slice(1);
-        if(os.platform() === 'win32'  || os.platform() === 'darwin') {
-
-            if(os.platform() === 'win32') {
-                toSpawn = toSpawn + '.cmd';
-            }
-            
-            if (fs.existsSync(path.join(cwd, 'node_modules/.bin', toSpawn))) {
-                toSpawn = path.normalize('./node_modules/.bin/' + toSpawn);
-            }
-        }
-
-        var tests = spawn(toSpawn, spawnArgs, {
+        var tests = spawn('sh', ['-c', cmd], {
             cwd: cwd,
             stdio: 'inherit'
         });
